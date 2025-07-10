@@ -1,7 +1,18 @@
 ----aDDING PAIRED/Connected device ---------------------------------------
+import re
 
+def is_valid_bd_address(self, address):
+    """
+    Checks if the provided string is a valid Bluetooth MAC address.
+    Args:
+        address (str): The MAC address string to validate.
+    Returns:
+        bool: True if valid, False otherwise.
+    """
+    pattern = r"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
+    return re.match(pattern, address) is not None
 
-def add_device(self, device_address):
+ add_device(self, device_address):
     """
     Adds a device address below the GAP item in the profile list if not already present.
     Args:
