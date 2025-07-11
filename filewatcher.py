@@ -1,3 +1,20 @@
+from threading import Thread
+
+def start_logs_async(self):
+    def run_logs():
+        self.bluez_logger.start_bluetoothd_logs(self.bluetoothd_log_text_browser)
+        self.bluez_logger.start_pulseaudio_logs(self.pulseaudio_log_text_browser)
+        self.bluez_logger.start_dump_logs(interface=self.interface, log_text_browser=self.hci_dump_log_text_browser)
+    
+    Thread(target=run_logs, daemon=True).start()
+    
+    
+
+
+
+
+
+
 from test_automation.UI.logger import Logger
 from test_automation.UI.UI_lib.controller_lib import Controller
 from PyQt6.QtCore import QFileSystemWatcher
