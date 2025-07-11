@@ -1,0 +1,610 @@
+
+    def build_opp_tab(self):
+        bold_font = QFont()
+        bold_font.setBold(True)
+
+        layout = QVBoxLayout()
+        opp_label = QLabel("OPP Functionality:")
+        opp_label.setFont(bold_font)
+        opp_label.setStyleSheet("color:black;")
+        layout.addWidget(opp_label)
+
+        # Device selection
+        '''
+        connected_devices = self.bluetooth_device_manager.get_connected_devices()
+        device_selection_layout = QHBoxLayout()
+        device_label = QLabel("Select Device:")
+        device_label.setFont(bold_font)
+        device_label.setStyleSheet("color:black;")
+        device_selection_layout.addWidget(device_label)
+        self.device_selector = QComboBox()
+        for address, name in connected_devices.items():
+            self.device_selector.addItem(f"{name} ({address})", address)
+        self.device_selector.currentIndexChanged.connect(self.on_device_selected_for_a2dp)
+        device_selection_layout.addWidget(self.device_selector)
+        layout.addLayout(device_selection_layout)
+        '''
+        device_label = QLabel(f"Sending/Receiving with Device: {self.device_address}")
+        device_label.setFont(bold_font)
+        device_label.setStyleSheet("color:black;")
+        layout.addWidget(device_label)
+
+        # File selection
+        file_selection_layout = QHBoxLayout()
+        file_label = QLabel("Select File:")
+        file_label.setFont(bold_font)
+        file_label.setStyleSheet("color:black;")
+        file_selection_layout.addWidget(file_label)
+        self.opp_location_input = QLineEdit()
+        self.opp_location_input.setReadOnly(True)
+        file_selection_layout.addWidget(self.opp_location_input)
+        self.browse_opp_button = QPushButton("Browse")
+        self.browse_opp_button.setFont(bold_font)
+        self.browse_opp_button.clicked.connect(self.browse_opp_file)
+        file_selection_layout.addWidget(self.browse_opp_button)
+        layout.addLayout(file_selection_layout)
+
+        # Send and Receive buttons
+        button_layout = QHBoxLayout()
+        self.send_file_button = QPushButton("Send File")
+        self.send_file_button.setFont(bold_font)
+        self.send_file_button.setStyleSheet("color:black;")
+        self.send_file_button.clicked.connect(self.send_file)
+        button_layout.addWidget(self.send_file_button)
+
+        self.receive_file_button = QPushButton("Receive File")
+        self.receive_file_button.setFont(bold_font)
+        self.receive_file_button.setStyleSheet("color:black;")
+        self.receive_file_button.clicked.connect(self.receive_file)
+        button_layout.addWidget(self.receive_file_button)
+
+        layout.addLayout(button_layout)
+
+        widget = QWidget()
+        widget.setLayout(layout)
+        widget.setStyleSheet("background-color: lightblue; color: black;")
+        return widget
+
+#-------------PROFILE TABS GENERATION-----------------------------
+    def load_profile_tabs_for_device(self, device_address):
+        bold_font = QFont()
+        bold_font.setBold(True)
+
+        if hasattr(self, 'profile_methods_widget'):
+            self.profile_methods_widget.setParent(None)
+
+        self.device_address = device_address
+        self.profile_description_text_browser.clear()
+        self.profile_description_text_browser.append(f"Connected Device: {device_address}")
+        self.profile_description_text_browser.setFont(bold_font)
+        self.profile_description_text_browser.append("Select a profile to proceed (A2DP or OPP)")
+
+        # Create empty tabs for A2DP and OPP
+        self.device_tab_widget = QTabWidget()
+        self.device_tab_widget.setFont(bold_font)
+
+        # Empty widgets that will be filled when the tab is clicked
+        self.a2dp_tab_placeholder = QWidget()
+        self.opp_tab_placeholder = QWidget()
+
+        self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
+        self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+        self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
+
+        self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+        self.profile_methods_layout = QHBoxLayout()
+        self.profile_methods_layout.addWidget(self.device_tab_widget)
+        self.profile_methods_widget = QWidget()
+        self.profile_methods_widget.setLayout(self.profile_methods_layout)
+        self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
+        # Manually trigger the tab setup for the default (usually first) tab
+        self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
+
+#---------PROFILE TAB SELECTION-----------------------------
+    def on_profile_tab_changed(self, index):
+        if not hasattr(self, 'device_tab_widget') or index < 0:
+            return  # Prevent early or invalid calls
+
+        selected_tab = self.device_tab_widget.tabText(index)
+        print(f"Switched to tab: {selected_tab}")
+
+
+        if selected_tab == "A2DP":
+            self.clear_layout(self.a2dp_tab_placeholder)
+            layout = QVBoxLayout()
+            # Build the consolidated A2DP panel directly
+            a2dp_panel = self.build_a2dp_ui(self.device_address)
+            layout.addWidget(a2dp_panel)
+            self.a2dp_tab_placeholder.setLayout(layout)
+            self.a2dp_tab_placeholder.update()
+
+        elif selected_tab == "OPP":
+            self.clear_layout(self.opp_tab_placeholder)
+            layout = QVBoxLayout()
+            opp_tab = self.build_opp_tab()
+            layout.addWidget(opp_tab)
+            self.opp_tab_placeholder.setLayout(layout)
+            self.opp_tab_placeholder.update()
+
+
+    def clear_layout(self, widget):
+        layout = widget.layout()
+        if layout is not None:
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+            QWidget().setLayout(layout)  # Detach layout from widget
+
+#---------CONNECTED/PAIRED DEVICE ADDED BELOW GAP---------
+
+    def add_device(self, device_address):
+        """
+        Adds a device address below the GAP item in the profile list if not already present.
+        Args:
+            device_address (str): The paired/connected device MAC address (e.g., 20:32:C6:7B:91:1C)
+        """
+        # Find GAP index
+        for i in range(self.profiles_list_widget.count()):
+            if self.profiles_list_widget.item(i).text().strip() == "GAP":
+                gap_index = i
+                break
+        else:
+            return  # GAP not found
+
+        # Check if device is already added
+        for i in range(self.profiles_list_widget.count()):
+            if self.profiles_list_widget.item(i).text().strip() == device_address:
+                return  # Already added
+
+        # Add device address as a new list item
+        device_item = QListWidgetItem(device_address)
+        device_item.setFont(QFont("Arial", 10))
+        device_item.setForeground(Qt.GlobalColor.black)
+
+        self.profiles_list_widget.insertItem(gap_index + 1, device_item)
+
+
+#------CHECK IF IT IS VALID BLUETOOTH ADDRESS-------
+    def is_bluetooth_address(self, text):
+        pattern = r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$"
+        return re.match(pattern, text) is not None
+
+#------PROFILE SELECTION----------------
+    def profile_selected(self):
+        """
+         Handles profile selection from the list.
+
+         Depending on the selected Bluetooth profile (e.g., GAP, A2DP, OPP),
+         this function dynamically updates the GUI to show relevant methods,
+         controls, and input fields for the selected profile.
+
+         args: None
+         returns: None
+         """
+        selected_item_text = self.findChild(QListWidget).currentItem().text()
+        bold_font = QFont()
+        bold_font.setBold(True)
+
+        # Remove old UI
+        if hasattr(self, 'profile_methods_widget'):
+            self.profile_methods_widget.deleteLater()
+
+        # If it's a MAC address (e.g., a connected device), handle it as A2DP
+        if self.is_bluetooth_address(selected_item_text):
+            self.load_profile_tabs_for_device(selected_item_text)
+            # Manually trigger the tab update
+            QTimer.singleShot(0, lambda: self.on_profile_tab_changed(self.device_tab_widget.currentIndex()))
+
+            return
+
+        if  selected_item_text == "GAP":
+            self.profile_description_text_browser.clear()
+            self.profile_description_text_browser.append("GAP Profile Selected")
+            self.profile_description_text_browser.setFont(bold_font)
+            self.profile_description_text_browser.append("Use the below methods as required:")
+
+            # Creating discoverable timeout input window along with SetDiscoverable ON/OFF
+            self.gap_methods_layout = QVBoxLayout()
+            set_discoverable_label = QLabel("SetDiscoverable:")
+            set_discoverable_label.setFont(bold_font)
+            set_discoverable_label.setStyleSheet("color:black")
+            self.gap_methods_layout.addWidget(set_discoverable_label)
+
+            set_discoverable_timeout_layout = QHBoxLayout()
+            set_discoverable_timeout_label = QLabel("SetDiscoverable Timeout:")
+            set_discoverable_timeout_label.setFont(bold_font)
+            set_discoverable_timeout_label.setStyleSheet("color:blue;")
+            set_discoverable_timeout_layout.addWidget(set_discoverable_timeout_label)
+            self.discoverable_timeout_input = QLineEdit("0")
+            set_discoverable_timeout_layout.addWidget(self.discoverable_timeout_input)
+            self.gap_methods_layout.addLayout(set_discoverable_timeout_layout)
+
+            discoverable_buttons_layout = QHBoxLayout()
+            self.set_discoverable_on_button = QPushButton("ON")
+            self.set_discoverable_on_button.setFont(bold_font)
+            self.set_discoverable_on_button.setStyleSheet("color:green;")
+            self.set_discoverable_on_button.clicked.connect(self.set_discoverable_on)
+            discoverable_buttons_layout.addWidget(self.set_discoverable_on_button)
+            self.set_discoverable_off_button = QPushButton("OFF")
+            self.set_discoverable_off_button.setFont(bold_font)
+            self.set_discoverable_off_button.setStyleSheet("color:red;")
+            self.set_discoverable_off_button.clicked.connect(self.set_discoverable_off)
+            self.set_discoverable_on_button.setEnabled(True)
+            self.set_discoverable_off_button.setEnabled(False)
+            discoverable_buttons_layout.addWidget(self.set_discoverable_off_button)
+            self.gap_methods_layout.addLayout(discoverable_buttons_layout)
+
+            refresh_button_layout_discoverable = QVBoxLayout()
+            self.refresh_button_discoverable = QPushButton("REFRESH")
+            self.refresh_button_discoverable.setEnabled(True)
+            self.refresh_button_discoverable.clicked.connect(self.refresh_discoverable)
+            self.refresh_button_discoverable.setFont(bold_font)
+            self.refresh_button_discoverable.setStyleSheet("color:green;")
+            refresh_button_layout_discoverable.addWidget(self.refresh_button_discoverable)
+            self.gap_methods_layout.addLayout(refresh_button_layout_discoverable)
+
+            # Creating GAP Methods Layout with Inquiry timeout along with StartDiscovery and StopDiscovery
+            inquiry_label = QLabel("Inquiry:")
+            inquiry_label.setFont(bold_font)
+            inquiry_label.setStyleSheet("color:black")
+            self.gap_methods_layout.addWidget(inquiry_label)
+            self.gap_methods_layout.addLayout(set_discoverable_timeout_layout)
+            inquiry_timeout_layout = QHBoxLayout()
+            inquiry_timeout_label = QLabel("Inquiry Timeout:")
+            inquiry_timeout_label.setFont(bold_font)
+            inquiry_timeout_label.setStyleSheet("color:blue;")
+            inquiry_timeout_layout.addWidget(inquiry_timeout_label)
+            self.inquiry_timeout_input = QLineEdit("0")
+            inquiry_timeout_layout.addWidget(self.inquiry_timeout_input)
+            self.gap_methods_layout.addLayout(inquiry_timeout_layout)
+
+            discovery_buttons_layout = QHBoxLayout()
+            self.set_discovery_on_button = QPushButton("START")
+            self.set_discovery_on_button.setFont(bold_font)
+            self.set_discovery_on_button.setStyleSheet("color:green;")
+            self.set_discovery_on_button.setEnabled(True)
+            self.set_discovery_on_button.clicked.connect(self.set_discovery_on)
+            discovery_buttons_layout.addWidget(self.set_discovery_on_button)
+            self.set_discovery_off_button = QPushButton("STOP")
+            self.set_discovery_off_button.setFont(bold_font)
+            self.set_discovery_off_button.setStyleSheet("color:red;")
+            self.set_discovery_off_button.clicked.connect(self.set_discovery_off)
+            self.set_discovery_off_button.setEnabled(False)
+            discovery_buttons_layout.addWidget(self.set_discovery_off_button)
+            self.gap_methods_layout.addLayout(discovery_buttons_layout)
+
+            refresh_button_layout = QVBoxLayout()
+            self.refresh_button = QPushButton("REFRESH")
+            self.refresh_button.setEnabled(True)
+            self.refresh_button.clicked.connect(self.refresh)
+            self.refresh_button.setFont(bold_font)
+            self.refresh_button.setStyleSheet("color:green;")
+            refresh_button_layout.addWidget(self.refresh_button)
+            self.gap_methods_layout.addLayout(refresh_button_layout)
+
+            # Creating GAP methods widget which will hold gap_methods_layout
+            gap_methods_widget = QWidget()
+            gap_methods_widget.setLayout(self.gap_methods_layout)
+
+            # Add Gap methods widget to Profile Methods or Procedures
+            self.profile_methods_layout = QHBoxLayout()
+            self.profile_methods_layout.addWidget(gap_methods_widget)
+            self.profile_methods_widget = QWidget()
+            self.profile_methods_widget.setLayout(self.profile_methods_layout)
+            self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
+#---------------A2DP METHODS-------------------------------
+
+    def build_a2dp_ui(self, device_address):
+        """
+        Builds a single A2DP panel combining source streaming and sink media control,
+        based on the device's A2DP roles.
+        """
+        bold_font = QFont()
+        bold_font.setBold(True)
+
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+
+        a2dp_label = QLabel("<b>A2DP Functionality:</b>")
+        layout.addWidget(a2dp_label)
+
+        self.device_address_source = device_address # Assume the selected device is both source/sink for the UI
+        self.device_address_sink = device_address # Set this for media control
+
+        role = self.get_a2dp_role_for_device(device_address)
+
+        if role in ["sink", "both"]:
+            # A2DP Source (streaming to this device)
+            streaming_group = QGroupBox("Streaming Audio (A2DP Source)")
+            streaming_layout = QVBoxLayout()
+            streaming_group.setLayout(streaming_layout)
+
+            audio_layout = QHBoxLayout()
+            audio_layout.addWidget(QLabel("Audio File:"))
+            self.audio_location_input = QLineEdit()
+            self.audio_location_input.setReadOnly(True)
+            audio_layout.addWidget(self.audio_location_input)
+            self.browse_audio_button = QPushButton("Browse...")
+            self.browse_audio_button.clicked.connect(self.browse_audio_file)
+            audio_layout.addWidget(self.browse_audio_button)
+            streaming_layout.addLayout(audio_layout)
+
+            streaming_buttons_layout = QHBoxLayout()
+            self.start_streaming_button = QPushButton("Start Streaming")
+            self.start_streaming_button.setObjectName("startButton")
+            self.start_streaming_button.clicked.connect(self.start_streaming)
+            streaming_buttons_layout.addWidget(self.start_streaming_button)
+
+            self.stop_streaming_button = QPushButton("Stop Streaming")
+            self.stop_streaming_button.setObjectName("stopButton")
+            self.stop_streaming_button.clicked.connect(self.stop_streaming)
+            self.stop_streaming_button.setEnabled(False)
+            streaming_buttons_layout.addWidget(self.stop_streaming_button)
+            streaming_layout.addLayout(streaming_buttons_layout)
+
+            layout.addWidget(streaming_group)
+
+        if role in ["source", "both"]:
+            # A2DP Sink (controlling this device's media)
+            media_control_group = QGroupBox("Media Control (A2DP Sink)")
+            media_control_group.setFont(bold_font)
+            media_control_layout = QVBoxLayout()
+            media_control_group.setLayout(media_control_layout)
+
+            control_buttons = QHBoxLayout()
+            self.play_button = QPushButton("Play")
+            self.play_button.setFont(bold_font)
+            self.play_button.clicked.connect(self.play)
+            control_buttons.addWidget(self.play_button)
+
+            self.pause_button = QPushButton("Pause")
+            self.pause_button.setFont(bold_font)
+            self.pause_button.clicked.connect(self.pause)
+            control_buttons.addWidget(self.pause_button)
+
+            self.next_button = QPushButton("Next")
+            self.next_button.setFont(bold_font)
+            self.next_button.clicked.connect(self.next)
+            control_buttons.addWidget(self.next_button)
+
+            self.previous_button = QPushButton("Previous")
+            self.previous_button.setFont(bold_font)
+            self.previous_button.clicked.connect(self.previous)
+            control_buttons.addWidget(self.previous_button)
+
+            self.rewind_button = QPushButton("Rewind")
+            self.rewind_button.setFont(bold_font)
+            self.rewind_button.clicked.connect(self.rewind)
+            control_buttons.addWidget(self.rewind_button)
+
+            media_control_layout.addLayout(control_buttons)
+            layout.addWidget(media_control_group)
+
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
+
+    def start_streaming(self):
+        """
+        Start A2DP streaming to a selected Bluetooth sink device.
+        Validates file and device selection.
+
+        args:None
+        returns: None
+
+        """
+
+        audio_path = self.audio_location_input.text().strip()
+        if not audio_path or not os.path.exists(audio_path):
+            QMessageBox.warning(self, "Invalid Audio File", "Please select a valid audio file to stream.")
+            return
+
+        # Ensure that the correct sink device is selected
+        #selected_index = self.device_selector.currentIndex()
+        #self.device_address_source = self.device_selector.itemData(selected_index)
+
+        print(f"Selected device address for streaming: {self.device_address_source}")
+
+        if not self.device_address_source:
+            QMessageBox.warning(self, "No Device", "Please select a Bluetooth sink device to stream.")
+            return
+
+        print(f"A2DP streaming started with file: {audio_path}")
+
+        self.start_streaming_button.setEnabled(False)
+        self.stop_streaming_button.setEnabled(True)
+
+        # Create BluetoothDeviceManager instance and start streaming
+        success = self.a2dp_manager.start_streaming(self.device_address_source, audio_path)
+
+        if not success:
+            QMessageBox.critical(self, "Streaming Failed", "Failed to start streaming.")
+            self.start_streaming_button.setEnabled(True)
+            self.stop_streaming_button.setEnabled(False)
+
+    def stop_streaming(self):
+        """
+        Stop active A2DP streaming session.
+
+        args: None
+        returns: None
+        """
+        print("A2DP streaming stopped")
+        self.start_streaming_button.setEnabled(True)
+        self.stop_streaming_button.setEnabled(False)
+
+        self.a2dp_manager.stop_streaming()
+
+        if hasattr(self, 'streaming_timer'):
+            self.streaming_timer.stop()
+
+    def play(self):
+        """
+        Send media play command to sink device.
+
+        args: None
+        returns: None
+        """
+        print("Play button has been pressed")
+        print(f"device_address_sink = {self.device_address_sink}")  # Debugging line
+        if self.device_address_sink:
+            self.a2dp_manager.play(self.device_address_sink)
+        else:
+            QMessageBox.warning(self, "No Device", "Please select a sink device for media control.")
+
+    def pause(self):
+        """
+        Send media pause command to sink device.
+
+        args : None
+        returns: None
+        """
+        print("Pause button has been pressed")
+        print(f"device_address_sink = {self.device_address_sink}")
+        if self.device_address_sink:
+            self.a2dp_manager.pause(self.device_address_sink)
+        else:
+            QMessageBox.warning(self, "No Device", "Please select a sink device for media control.")
+
+    def next(self):
+        """
+        Send media next track command to sink device.
+
+        args : None
+        returns: None
+        """
+
+        print(f"Next button has been pressed. Device address: {self.device_address_sink}")  # Debugging line
+        if self.device_address_sink:
+            self.a2dp_manager.next(self.device_address_sink)
+        else:
+            QMessageBox.warning(self, "No Device", "Please select a sink device for media control.")
+
+    def previous(self):
+        """
+        Handle media control action: Previous track.
+
+        args: None
+        returns: None
+        """
+        print(f"Previous button has been pressed. Device address: {self.device_address_sink}")  # Debugging line
+        if self.device_address_sink:
+            self.a2dp_manager.previous(self.device_address_sink)
+        else:
+            QMessageBox.warning(self, "No Device", "Please select a sink device for media control.")
+
+    def rewind(self):
+        """Handle media control action: Rewind track.
+
+        args: None
+        returns: None
+        """
+        print(f"Rewind button has been pressed. Device address: {self.device_address_sink}")  # Debugging line
+        if self.device_address_sink:
+            self.a2dp_manager.rewind(self.device_address_sink)
+        else:
+            QMessageBox.warning(self, "No Device", "Please select a sink device for media control.")
+
+    def refresh_a2dp_sink_devices(self):
+        """Refresh the list of connected A2DP source devices for sink control.
+
+        args: None
+        returns: None
+        """
+        self.device_selector_sink.clear()
+        connected_sources = self.a2dp_manager.get_connected_a2dp_source_devices()
+        for address, name in connected_sources.items():
+            self.device_selector_sink.addItem(f"{name} ({address})", address)
+
+    def browse_audio_file(self):
+        """Open a file dialog for selecting an audio file.
+
+        args: None
+        returns: None
+        """
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(None, "Select Audio File", "",
+                                                   "Audio Files (*.mp3 *.wav *.ogg *.flac);;All Files (*)")
+        if file_path:
+            self.audio_location_input.setText(file_path)
+
+
+    def get_a2dp_role_for_device(self, device_address):
+        sinks = self.a2dp_manager.get_connected_a2dp_sink_devices()
+        sources = self.a2dp_manager.get_connected_a2dp_source_devices()
+
+        if device_address in sinks and device_address in sources:
+            return "both"
+        elif device_address in sinks:
+            return "sink"
+        elif device_address in sources:
+            return "source"
+        return None
+
+
+#------------------OPP METHODS------------------------
+
+    def browse_opp_file(self):
+        """
+        Open a file dialog to select a file to send via OPP.
+
+        args: None
+        returns: None
+        """
+
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(
+            None,
+            "Select File to Send via OPP",
+            "",
+            "All Files (*)"
+        )
+        if file_path:
+            self.opp_location_input.setText(file_path)
+
+    def send_file(self):
+        """
+        Send a selected file to a remote device using OPP.
+
+        args: None
+        returns: None
+        """
+
+        file_path = self.opp_location_input.text()
+        device_index = self.device_selector.currentIndex()
+        device_address = self.device_selector.itemData(device_index)
+
+        if not file_path or not device_address:
+            QMessageBox.warning(None, "OPP", "Please select a device and a file.")
+            return
+
+        self.send_file_button.setEnabled(False)
+        self.send_file_button.setText("Sending...")
+
+        try:
+            success = self.opp_manager.send_file_via_obex(device_address, file_path)
+        except Exception as e:
+            success = False
+            print(f"UI error: {e}")
+
+        self.send_file_button.setEnabled(True)
+        self.send_file_button.setText("Send File")
+
+        if success is True:
+            QMessageBox.information(None, "OPP", "File sent successfully!")
+        else:
+            QMessageBox.warning(None, "OPP",
+                                "Notification has been sent to the remote device, accept it to receive the object")
+
+    def receive_file(self):
+        """
+        Start OPP receiver to receive files from a remote device.
+
+        args: None
+        returns: None
+        """
+
+        success = self.opp_manager.start_opp_receiver()
+        QMessageBox.information(None, "OPP", "Ready to receive files..." if success else "Failed to start receiver.")
