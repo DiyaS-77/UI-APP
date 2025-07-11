@@ -1,3 +1,24 @@
+
+# Remove previous widgets/layouts from profile_methods_layout
+while self.profile_methods_layout.count():
+    item = self.profile_methods_layout.takeAt(0)
+    widget = item.widget()
+    if widget is not None:
+        widget.setParent(None)
+
+# Now safely add the new device_tab_widget
+self.device_tab_widget = QTabWidget()
+self.device_tab_widget.setFont(QFont("Arial", 10, QFont.Bold))
+self.device_tab_widget.setTabPosition(QTabWidget.TabPosition.North)
+self.device_tab_widget.setStyleSheet("color: black; padding-right: 10px;")
+
+# Add tabs only based on role (A2DP Sink/Source, OPP, etc.)
+self.device_tab_widget.addTab(self.build_a2dp_sink_tab(), "A2DP")
+
+# Add to layout
+self.profile_methods_layout.addWidget(self.device_tab_widget)
+
+
 def load_profile_tabs_for_device(self, device_address):
     """
     Loads profile tabs (like A2DP, OPP) for a selected device,
