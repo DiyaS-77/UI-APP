@@ -1,4 +1,45 @@
+def load_profile_tabs_for_device(self, device_address):
+    """
+    Loads profile tabs (like A2DP, OPP) for a selected device,
+    depending on its supported roles.
+    """
 
+    # Clear existing profile UI
+    for i in reversed(range(self.profile_methods_layout.count())):
+        item = self.profile_methods_layout.itemAt(i)
+        if item.widget():
+            item.widget().deleteLater()
+
+    bold_font = QFont()
+    bold_font.setBold(True)
+
+    # Create tab widget for profiles
+    self.device_tab_widget = QTabWidget()
+    self.device_tab_widget.setFont(bold_font)
+    self.device_tab_widget.setStyleSheet("color:black; background-color:white;")
+    self.device_tab_widget.setTabPosition(QTabWidget.North)
+
+    role = self.get_a2dp_role_for_device(device_address)
+
+    if role in ["sink", "both"]:
+        self.device_tab_widget.addTab(QWidget(), "A2DP Source")
+    if role in ["source", "both"]:
+        self.device_tab_widget.addTab(QWidget(), "A2DP Sink")
+
+    # Connect tab change handler
+    self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+    # === NEW: Wrap the tab widget inside a wrapper widget with margins ===
+    wrapper_layout = QVBoxLayout()
+    wrapper_layout.setContentsMargins(10, 10, 20, 10)  # left, top, right, bottom
+    wrapper_layout.addWidget(self.device_tab_widget)
+
+    wrapper_widget = QWidget()
+    wrapper_widget.setLayout(wrapper_layout)
+
+    # Add wrapper to the profile methods layout
+    self.profile_methods_layout = QHBoxLayout()
+    self.profile_methods_layout.addWidget(wrapper_widget)
     def build_opp_tab(self):
         bold_font = QFont()
         bold_font.setBold(True)
