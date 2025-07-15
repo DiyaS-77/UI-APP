@@ -1,3 +1,56 @@
+
+    def get_paired_devices(self):
+        """
+        Retrieves a dictionary of currently connected Bluetooth devices.
+
+        args : None
+        Returns:
+            dict: Mapping of device addresses to names.
+        """
+        connected = {}
+        objects = self.object_manager.GetManagedObjects()
+        for path, interfaces in objects.items():
+            if "org.bluez.Device1" in interfaces:
+                props = interfaces["org.bluez.Device1"]
+                if props.get("Paired", False):
+                    address = props.get("Address")
+                    name = props.get("Name", "Unknown")
+                    connected[address] = name
+        return connected
+
+    def get_connected_devices(self):
+        """
+        Retrieves a dictionary of currently connected Bluetooth devices.
+
+        args : None
+        Returns:
+            dict: Mapping of device addresses to names.
+        """
+        connected = {}
+        objects = self.object_manager.GetManagedObjects()
+        for path, interfaces in objects.items():
+            if "org.bluez.Device1" in interfaces:
+                props = interfaces["org.bluez.Device1"]
+                if props.get("Connected", False):
+                    address = props.get("Address")
+                    name = props.get("Name", "Unknown")
+                    connected[address] = name
+        return connected
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def update_device_buttons_state(self, device_address):
     if self.bluetooth_device_manager.is_connected(device_address):
         self.connect_button.setEnabled(False)
