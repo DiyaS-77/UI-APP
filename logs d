@@ -1,3 +1,47 @@
+    def load_profile_tabs_for_device(self, device_address):
+        bold_font = QFont()
+        bold_font.setBold(True)
+
+        if hasattr(self, 'profile_methods_widget'):
+            self.profile_methods_widget.setParent(None)
+
+        self.device_address = device_address
+        self.profile_description_text_browser.clear()
+        self.profile_description_text_browser.append(f"Connected Device: {device_address}")
+        self.profile_description_text_browser.setFont(bold_font)
+        self.profile_description_text_browser.append("Select a profile to proceed (A2DP or OPP)")
+
+        # Create empty tabs for A2DP and OPP
+        self.device_tab_widget = QTabWidget()
+        self.device_tab_widget.setMaximumWidth(600)
+        self.device_tab_widget.setFont(bold_font)
+
+        # Empty widgets that will be filled when the tab is clicked
+        self.a2dp_tab_placeholder = QWidget()
+        self.a2dp_tab_placeholder.setMaximumWidth(600)
+        self.opp_tab_placeholder = QWidget()
+        self.opp_tab_placeholder.setMaximumWidth(600)
+
+        self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
+        self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+        self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
+
+        self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+        self.profile_methods_layout = QHBoxLayout()
+        #self.profile_methods_layout.setContentsMargins(10,0,10,0)
+        self.profile_methods_layout.addWidget(self.device_tab_widget)
+        self.profile_methods_widget = QWidget()
+        self.profile_methods_widget.setMaximumWidth(500)
+        #self.profile_methods_widget.setContentsMargins(10,0,10,0)
+        self.profile_methods_widget.setLayout(self.profile_methods_layout)
+        self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
+        # Manually trigger the tab setup for the default (usually first) tab
+        self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
+
+
+
+
 def connect_and_reload(self, device_address):
     success = self.bluetooth_device_manager.connect_device(device_address)
     if success:
