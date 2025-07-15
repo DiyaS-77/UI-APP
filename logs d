@@ -1,23 +1,17 @@
-def tail_log_file(filepath, text_browser):
-    def watch():
-        try:
-            with open(filepath, 'r') as f:
-                f.seek(0, os.SEEK_END)  # jump to EOF
-                while True:
-                    line = f.readline()
-                    if not line:
-                        time.sleep(0.2)
-                        continue
-                    text_browser.append(line.strip())
-        except Exception as e:
-            print(f"Log Watch Error: {e}")
-    threading.Thread(target=watch, daemon=True).start()
 
-def start_bluetoothd_logs(self, text_browser):
-    tail_log_file(self.bluetoothd_logfile_path, text_browser)
+# After: self.profiles_list_widget.addItem("GAP")
+# Add already paired and connected devices below "GAP"
+gap_index = self.profiles_list_widget.count() - 1
 
-def start_pulseaudio_logs(self, text_browser):
-    tail_log_file(self.pulseaudio_logfile_path, text_browser)
+paired_devices = self.bluetooth_device_manager.get_paired_devices()
+connected_devices = self.bluetooth_device_manager.get_connected_devices()
 
-def start_dump_logs(self, interface, log_text_browser):
-    tail_log_file(self.hcidump_logfile_path, log_text_browser)
+# Use a set to avoid duplicates
+unique_devices = set(paired_devices.keys()).union(connected_devices.keys())
+
+for device_address in unique_devices:
+    device_item = QListWidgetItem(device_address)
+    device_item.setFont(QFont("Arial", 10))
+    device_item.setForeground(Qt.GlobalColor.black)
+    gap_index += 1
+    self.profiles_list_widget.insertItem(gap_index, device_item)
