@@ -1,3 +1,16 @@
+
+def remove_unpaired_device_from_list(self, unpaired_address):
+    """
+    Removes a specific unpaired device from the profiles list (if present).
+    This avoids clearing the entire list and keeps all other devices intact.
+    """
+    for i in range(self.profiles_list_widget.count()):
+        item_text = self.profiles_list_widget.item(i).text().strip()
+        if item_text == unpaired_address:
+            self.profiles_list_widget.takeItem(i)
+            break
+
+
 def refresh_gap_device_list(self):
     # Step 1: Remove all items except "GAP"
     for i in reversed(range(self.profiles_list_widget.count())):
