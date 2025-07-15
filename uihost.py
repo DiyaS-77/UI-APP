@@ -5,7 +5,7 @@ import re
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QScrollArea, QListWidgetItem, QGroupBox
+from PyQt6.QtWidgets import QScrollArea, QListWidgetItem, QGroupBox, QDialog
 from PyQt6.QtWidgets import QGridLayout
 from PyQt6.QtWidgets import QHBoxLayout
 from PyQt6.QtWidgets import QListWidget
@@ -23,13 +23,41 @@ from PyQt6.QtWidgets import QMessageBox
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtWidgets import QComboBox
 
-#from test_automation.UI.Backend_lib.Linux.filewatcher import BluezLogger
-from test_automation.UI.Backend_lib.Linux.bluez_utils import BluezLogger
+from test_automation.UI.Backend_lib.Linux.filewatcher import BluezLogger
+#from test_automation.UI.Backend_lib.Linux.bluez_utils import BluezLogger
 from test_automation.UI.UI_lib.controller_lib import Controller
 from test_automation.UI.logger import Logger
 from test_automation.UI.Backend_lib.Linux.a2dp_profile import A2DPManager
 from test_automation.UI.Backend_lib.Linux.opp_profile import OPPManager
 from test_automation.UI.Backend_lib.Linux.daemons import BluezServices
+
+
+class CustomDialog(QDialog):
+
+    """ Dialog window shown when no controller is selected but an action is attempted.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Warning!")
+        layout = QVBoxLayout()
+        message = QLabel("Connect the device !!")
+        layout.addWidget(message)
+        self.setLayout(layout)
+
+    def showEvent(self, event):
+        """ Centers the dialog box on top of the parent widget when displayed
+
+         Args :
+            event (QShowEvent) : Qt show event object
+
+         returns: None
+         """
+        parent_geometry = self.parent().geometry()
+        dialog_geometry = self.geometry()
+        x = (parent_geometry.x() + (parent_geometry.width() - dialog_geometry.width()) // 2)
+        y = (parent_geometry.y() + (parent_geometry.height() - dialog_geometry.height()) // 2)
+        self.move(x, y)
+        super().showEvent(event)
 
 
 class Controller:
@@ -401,6 +429,7 @@ class TestApplication(QWidget):
             media_control_layout = QVBoxLayout()
             media_control_group.setLayout(media_control_layout)
 
+
             control_buttons = QHBoxLayout()
             self.play_button = QPushButton("Play")
             self.play_button.setFont(bold_font)
@@ -682,6 +711,7 @@ class TestApplication(QWidget):
         device_selection_layout.addWidget(self.device_selector)
         layout.addLayout(device_selection_layout)
         '''
+
         device_label = QLabel(f"Sending/Receiving with Device: {self.device_address}")
         device_label.setFont(bold_font)
         device_label.setStyleSheet("color:black;")
@@ -701,6 +731,7 @@ class TestApplication(QWidget):
         self.browse_opp_button.clicked.connect(self.browse_opp_file)
         file_selection_layout.addWidget(self.browse_opp_button)
         layout.addLayout(file_selection_layout)
+
 
         # Send and Receive buttons
         button_layout = QHBoxLayout()
@@ -739,11 +770,14 @@ class TestApplication(QWidget):
 
         # Create empty tabs for A2DP and OPP
         self.device_tab_widget = QTabWidget()
+        self.device_tab_widget.setMaximumWidth(600)
         self.device_tab_widget.setFont(bold_font)
 
         # Empty widgets that will be filled when the tab is clicked
         self.a2dp_tab_placeholder = QWidget()
+        self.a2dp_tab_placeholder.setMaximumWidth(600)
         self.opp_tab_placeholder = QWidget()
+        self.opp_tab_placeholder.setMaximumWidth(600)
 
         self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
         self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
@@ -752,8 +786,11 @@ class TestApplication(QWidget):
         self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
 
         self.profile_methods_layout = QHBoxLayout()
+        #self.profile_methods_layout.setContentsMargins(10,0,10,0)
         self.profile_methods_layout.addWidget(self.device_tab_widget)
         self.profile_methods_widget = QWidget()
+        self.profile_methods_widget.setMaximumWidth(500)
+        #self.profile_methods_widget.setContentsMargins(10,0,10,0)
         self.profile_methods_widget.setLayout(self.profile_methods_layout)
         self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
         # Manually trigger the tab setup for the default (usually first) tab
@@ -765,7 +802,7 @@ class TestApplication(QWidget):
             return  # Prevent early or invalid calls
 
         selected_tab = self.device_tab_widget.tabText(index)
-        print(f"Switched to tab: {selected_tab}")
+
 
 
         if selected_tab == "A2DP":
@@ -1087,6 +1124,7 @@ class TestApplication(QWidget):
 
         self.main_grid_layout.addWidget(profile_description_label, 0, 2)
         self.profile_description_text_browser = QTextBrowser()
+        #self.profile_description_text_browser.setMaximumWidth(500)
         self.main_grid_layout.addWidget(self.profile_description_text_browser, 1, 2, 10, 2)
         self.profile_description_text_browser.setStyleSheet(
             "background: transparent;color:black;border: 2px solid black;")
@@ -1166,9 +1204,7 @@ class TestApplication(QWidget):
         self.bluez_logger.start_pulseaudio_logs(self.pulseaudio_log_text_browser)
 
         # Start HCI dump logs
-        self.bluez_logger.start_dump_logs(
-            interface=self.interface,
-            log_text_browser=self.hci_dump_log_text_browser)
+        self.bluez_logger.start_dump_logs(interface=self.interface,log_text_browser=self.hci_dump_log_text_browser)
 
         # Set the main layout for the test application window
 
