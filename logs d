@@ -1,4 +1,4 @@
-
+So ok leave all. This I will give you my new host ui code .. I’m already adding  connected and paired devices under gap in the list of profiles if user is doing that in current session so what I want to do is .. at starup of ui only check if any devices are already connected without user clicking on pair or connect which is displayed when user clicks on gap .. and display it below gap if any devices are already connected or paired …
 # After: self.profiles_list_widget.addItem("GAP")
 # Add already paired and connected devices below "GAP"
 gap_index = self.profiles_list_widget.count() - 1
