@@ -1,3 +1,105 @@
+def clear_profile_ui(self):
+    if hasattr(self, 'profile_methods_widget'):
+        self.profile_methods_widget.setParent(None)
+
+
+if selected_item_text == "GAP":
+    self.clear_profile_ui()
+    self.show_gap_ui()
+    return
+def show_gap_ui(self):
+    bold_font = QFont()
+    bold_font.setBold(True)
+
+    self.gap_methods_layout = QVBoxLayout()
+
+    # Discoverable Section
+    discoverable_label = QLabel("SetDiscoverable:")
+    discoverable_label.setFont(bold_font)
+    discoverable_label.setStyleSheet("color:black")
+    self.gap_methods_layout.addWidget(discoverable_label)
+
+    timeout_layout = QHBoxLayout()
+    timeout_label = QLabel("SetDiscoverable Timeout:")
+    timeout_label.setFont(bold_font)
+    timeout_label.setStyleSheet("color:blue;")
+    timeout_layout.addWidget(timeout_label)
+    self.discoverable_timeout_input = QLineEdit("0")
+    timeout_layout.addWidget(self.discoverable_timeout_input)
+    self.gap_methods_layout.addLayout(timeout_layout)
+
+    discoverable_buttons = QHBoxLayout()
+    self.set_discoverable_on_button = QPushButton("ON")
+    self.set_discoverable_on_button.setFont(bold_font)
+    self.set_discoverable_on_button.setStyleSheet("color:green;")
+    self.set_discoverable_on_button.clicked.connect(self.set_discoverable_on)
+    discoverable_buttons.addWidget(self.set_discoverable_on_button)
+
+    self.set_discoverable_off_button = QPushButton("OFF")
+    self.set_discoverable_off_button.setFont(bold_font)
+    self.set_discoverable_off_button.setStyleSheet("color:red;")
+    self.set_discoverable_off_button.clicked.connect(self.set_discoverable_off)
+    self.set_discoverable_off_button.setEnabled(False)
+    discoverable_buttons.addWidget(self.set_discoverable_off_button)
+    self.gap_methods_layout.addLayout(discoverable_buttons)
+
+    # Inquiry Section
+    inquiry_label = QLabel("Inquiry:")
+    inquiry_label.setFont(bold_font)
+    inquiry_label.setStyleSheet("color:black")
+    self.gap_methods_layout.addWidget(inquiry_label)
+
+    inquiry_timeout_layout = QHBoxLayout()
+    inquiry_timeout_label = QLabel("Inquiry Timeout:")
+    inquiry_timeout_label.setFont(bold_font)
+    inquiry_timeout_label.setStyleSheet("color:blue;")
+    inquiry_timeout_layout.addWidget(inquiry_timeout_label)
+    self.inquiry_timeout_input = QLineEdit("0")
+    inquiry_timeout_layout.addWidget(self.inquiry_timeout_input)
+    self.gap_methods_layout.addLayout(inquiry_timeout_layout)
+
+    discovery_buttons = QHBoxLayout()
+    self.set_discovery_on_button = QPushButton("START")
+    self.set_discovery_on_button.setFont(bold_font)
+    self.set_discovery_on_button.setStyleSheet("color:green;")
+    self.set_discovery_on_button.clicked.connect(self.set_discovery_on)
+    discovery_buttons.addWidget(self.set_discovery_on_button)
+
+    self.set_discovery_off_button = QPushButton("STOP")
+    self.set_discovery_off_button.setFont(bold_font)
+    self.set_discovery_off_button.setStyleSheet("color:red;")
+    self.set_discovery_off_button.clicked.connect(self.set_discovery_off)
+    self.set_discovery_off_button.setEnabled(False)
+    discovery_buttons.addWidget(self.set_discovery_off_button)
+    self.gap_methods_layout.addLayout(discovery_buttons)
+
+    # Refresh buttons
+    refresh_layout_1 = QVBoxLayout()
+    self.refresh_button_discoverable = QPushButton("REFRESH")
+    self.refresh_button_discoverable.setFont(bold_font)
+    self.refresh_button_discoverable.setStyleSheet("color:green;")
+    self.refresh_button_discoverable.clicked.connect(self.refresh_discoverable)
+    refresh_layout_1.addWidget(self.refresh_button_discoverable)
+    self.gap_methods_layout.addLayout(refresh_layout_1)
+
+    refresh_layout_2 = QVBoxLayout()
+    self.refresh_button = QPushButton("REFRESH")
+    self.refresh_button.setFont(bold_font)
+    self.refresh_button.setStyleSheet("color:green;")
+    self.refresh_button.clicked.connect(self.refresh)
+    refresh_layout_2.addWidget(self.refresh_button)
+    self.gap_methods_layout.addLayout(refresh_layout_2)
+
+    gap_widget = QWidget()
+    gap_widget.setLayout(self.gap_methods_layout)
+
+    self.profile_methods_layout = QVBoxLayout()
+    self.profile_methods_layout.addWidget(gap_widget)
+    self.profile_methods_widget = QWidget()
+    self.profile_methods_widget.setLayout(self.profile_methods_layout)
+
+    self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 1, 2, 10, 2)
+
 def load_profile_tabs_for_device(self, device_address):
     bold_font = QFont()
     bold_font.setBold(True)
