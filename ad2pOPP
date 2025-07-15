@@ -1,3 +1,73 @@
+def update_device_buttons_state(self, device_address):
+    if self.bluetooth_device_manager.is_connected(device_address):
+        self.connect_button.setEnabled(False)
+        self.disconnect_button.setEnabled(True)
+    else:
+        self.connect_button.setEnabled(True)
+        self.disconnect_button.setEnabled(False)
+
+    if self.bluetooth_device_manager.is_paired(device_address):
+        self.unpair_button.setEnabled(True)
+    else:
+        self.unpair_button.setEnabled(False)
+
+def load_profile_tabs_for_device(self, device_address):
+    bold_font = QFont()
+    bold_font.setBold(True)
+
+    if hasattr(self, 'profile_methods_widget'):
+        self.profile_methods_widget.setParent(None)
+
+    self.device_address = device_address
+
+    # Create profile tabs (A2DP, OPP)
+    self.device_tab_widget = QTabWidget()
+    self.device_tab_widget.setMaximumWidth(600)
+    self.device_tab_widget.setFont(bold_font)
+    self.a2dp_tab_placeholder = QWidget()
+    self.opp_tab_placeholder = QWidget()
+    self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
+    self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+    self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
+    self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+    # ----- Buttons Section -----
+    self.connect_button = QPushButton("Connect")
+    self.disconnect_button = QPushButton("Disconnect")
+    self.unpair_button = QPushButton("Unpair")
+
+    for btn in [self.connect_button, self.disconnect_button, self.unpair_button]:
+        btn.setFont(bold_font)
+        btn.setFixedHeight(28)
+        btn.setFixedWidth(100)
+
+    self.connect_button.clicked.connect(lambda: self.connect_device(device_address))
+    self.disconnect_button.clicked.connect(lambda: self.disconnect_device(device_address))
+    self.unpair_button.clicked.connect(lambda: self.unpair_device(device_address))
+
+    self.update_device_buttons_state(device_address)  # Enable/disable based on state
+
+    buttons_layout = QHBoxLayout()
+    buttons_layout.addStretch()
+    buttons_layout.addWidget(self.connect_button)
+    buttons_layout.addWidget(self.disconnect_button)
+    buttons_layout.addWidget(self.unpair_button)
+    buttons_layout.addStretch()
+
+    # ----- Main layout for middle panel -----
+    self.profile_methods_layout = QVBoxLayout()
+    self.profile_methods_layout.addWidget(self.device_tab_widget)
+    self.profile_methods_layout.addSpacing(10)
+    self.profile_methods_layout.addLayout(buttons_layout)
+    self.profile_methods_layout.addStretch()
+
+    self.profile_methods_widget = QWidget()
+    self.profile_methods_widget.setLayout(self.profile_methods_layout)
+    self.profile_methods_widget.setMaximumWidth(600)
+
+    self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
+
+    self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
 
 def remove_unpaired_device_from_list(self, unpaired_address):
     """
