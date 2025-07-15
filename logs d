@@ -1,47 +1,4 @@
-    def load_profile_tabs_for_device(self, device_address):
-        bold_font = QFont()
-        bold_font.setBold(True)
-
-        if hasattr(self, 'profile_methods_widget'):
-            self.profile_methods_widget.setParent(None)
-
-        self.device_address = device_address
-        self.profile_description_text_browser.clear()
-        self.profile_description_text_browser.append(f"Connected Device: {device_address}")
-        self.profile_description_text_browser.setFont(bold_font)
-        self.profile_description_text_browser.append("Select a profile to proceed (A2DP or OPP)")
-
-        # Create empty tabs for A2DP and OPP
-        self.device_tab_widget = QTabWidget()
-        self.device_tab_widget.setMaximumWidth(600)
-        self.device_tab_widget.setFont(bold_font)
-
-        # Empty widgets that will be filled when the tab is clicked
-        self.a2dp_tab_placeholder = QWidget()
-        self.a2dp_tab_placeholder.setMaximumWidth(600)
-        self.opp_tab_placeholder = QWidget()
-        self.opp_tab_placeholder.setMaximumWidth(600)
-
-        self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
-        self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
-        self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
-
-        self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
-
-        self.profile_methods_layout = QHBoxLayout()
-        #self.profile_methods_layout.setContentsMargins(10,0,10,0)
-        self.profile_methods_layout.addWidget(self.device_tab_widget)
-        self.profile_methods_widget = QWidget()
-        self.profile_methods_widget.setMaximumWidth(500)
-        #self.profile_methods_widget.setContentsMargins(10,0,10,0)
-        self.profile_methods_widget.setLayout(self.profile_methods_layout)
-        self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
-        # Manually trigger the tab setup for the default (usually first) tab
-        self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
-
-
-
-
+    
 def connect_and_reload(self, device_address):
     success = self.bluetooth_device_manager.connect_device(device_address)
     if success:
@@ -50,41 +7,42 @@ def connect_and_reload(self, device_address):
     else:
         QMessageBox.warning(self, "Connection Failed", f"Failed to connect to {device_address}.")
 
-
-
 def load_profile_tabs_for_device(self, device_address):
     bold_font = QFont()
     bold_font.setBold(True)
 
-    # Clear any previous profile method widget
     if hasattr(self, 'profile_methods_widget'):
         self.profile_methods_widget.setParent(None)
 
     self.device_address = device_address
+    self.profile_description_text_browser.clear()
+    self.profile_description_text_browser.append(f"Connected Device: {device_address}")
+    self.profile_description_text_browser.setFont(bold_font)
+    self.profile_description_text_browser.append("Select a profile to proceed (A2DP or OPP)")
 
-    # Profile description (optional header text if needed)
-    print(f"[INFO] Selected device: {device_address}")
-
-    # Create tab widget for profiles
+    # Create empty tabs for A2DP and OPP
     self.device_tab_widget = QTabWidget()
+    self.device_tab_widget.setMaximumWidth(600)
     self.device_tab_widget.setFont(bold_font)
     self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
 
     self.a2dp_tab_placeholder = QWidget()
+    self.a2dp_tab_placeholder.setMaximumWidth(600)
     self.opp_tab_placeholder = QWidget()
+    self.opp_tab_placeholder.setMaximumWidth(600)
 
     self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
     self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+
     self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
 
-    # Main vertical layout to hold tabs + optional connect section
+    # === Main layout with tabs + optional connect button ===
     self.profile_methods_layout = QVBoxLayout()
-    self.profile_methods_layout.setContentsMargins(10, 0, 10, 0)
     self.profile_methods_layout.addWidget(self.device_tab_widget)
 
-    # Check connection state
+    # Show connect button if device is not connected
     if not self.bluetooth_device_manager.is_connected(device_address):
-        warning_label = QLabel("🔌 Device not connected. Please connect to use A2DP.")
+        warning_label = QLabel("🔌 Device is not connected. Connect to enable profile controls.")
         warning_label.setFont(bold_font)
         warning_label.setStyleSheet("color: red;")
         self.profile_methods_layout.addWidget(warning_label)
@@ -95,17 +53,15 @@ def load_profile_tabs_for_device(self, device_address):
         connect_button.clicked.connect(lambda: self.connect_and_reload(device_address))
         self.profile_methods_layout.addWidget(connect_button)
 
-    # Final widget setup
     self.profile_methods_widget = QWidget()
+    self.profile_methods_widget.setMaximumWidth(500)
     self.profile_methods_widget.setLayout(self.profile_methods_layout)
 
-    # Add to central grid layout
-    self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 0, 6, 4)
+    self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 2, 3, 1)
 
-    # Load tab content if already connected
+    # Trigger tab setup if already connected
     if self.bluetooth_device_manager.is_connected(device_address):
         self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
-
 
 So ok leave all. This I will give you my new host ui code .. I’m already adding  connected and paired devices under gap in the list of profiles if user is doing that in current session so what I want to do is .. at starup of ui only check if any devices are already connected without user clicking on pair or connect which is displayed when user clicks on gap .. and display it below gap if any devices are already connected or paired …
 # After: self.profiles_list_widget.addItem("GAP")
