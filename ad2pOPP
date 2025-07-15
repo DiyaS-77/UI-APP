@@ -1,3 +1,25 @@
+def refresh_gap_device_list(self):
+    # Step 1: Remove all items except "GAP"
+    for i in reversed(range(self.profiles_list_widget.count())):
+        item_text = self.profiles_list_widget.item(i).text().strip()
+        if item_text != "GAP":
+            self.profiles_list_widget.takeItem(i)
+
+    # Step 2: Re-add currently connected/paired devices
+    gap_index = self.profiles_list_widget.row(self.profiles_list_widget.findItems("GAP", Qt.MatchExactly)[0])
+    
+    paired_devices = self.bluetooth_device_manager.get_paired_devices()
+    connected_devices = self.bluetooth_device_manager.get_connected_devices()
+    unique_devices = set(paired_devices.keys()).union(connected_devices.keys())
+
+    for device_address in unique_devices:
+        device_item = QListWidgetItem(device_address)
+        device_item.setFont(QFont("Arial", 10))
+        device_item.setForeground(Qt.GlobalColor.black)
+        gap_index += 1
+        self.profiles_list_widget.insertItem(gap_index, device_item)
+
+
 def add_connection_controls(self, layout: QVBoxLayout, device_address: str):
     """
     Add Connect / Disconnect / Unpair buttons to the given layout.
