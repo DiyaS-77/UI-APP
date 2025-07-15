@@ -1,3 +1,68 @@
+def connect_and_reload(self, device_address):
+    success = self.bluetooth_device_manager.connect_device(device_address)
+    if success:
+        print(f"[INFO] {device_address} connected successfully.")
+        self.load_profile_tabs_for_device(device_address)
+    else:
+        QMessageBox.warning(self, "Connection Failed", f"Failed to connect to {device_address}.")
+
+
+
+def load_profile_tabs_for_device(self, device_address):
+    bold_font = QFont()
+    bold_font.setBold(True)
+
+    # Clear any previous profile method widget
+    if hasattr(self, 'profile_methods_widget'):
+        self.profile_methods_widget.setParent(None)
+
+    self.device_address = device_address
+
+    # Profile description (optional header text if needed)
+    print(f"[INFO] Selected device: {device_address}")
+
+    # Create tab widget for profiles
+    self.device_tab_widget = QTabWidget()
+    self.device_tab_widget.setFont(bold_font)
+    self.device_tab_widget.setStyleSheet("color: black; background-color: lightblue;")
+
+    self.a2dp_tab_placeholder = QWidget()
+    self.opp_tab_placeholder = QWidget()
+
+    self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP")
+    self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+    self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+    # Main vertical layout to hold tabs + optional connect section
+    self.profile_methods_layout = QVBoxLayout()
+    self.profile_methods_layout.setContentsMargins(10, 0, 10, 0)
+    self.profile_methods_layout.addWidget(self.device_tab_widget)
+
+    # Check connection state
+    if not self.bluetooth_device_manager.is_connected(device_address):
+        warning_label = QLabel("🔌 Device not connected. Please connect to use A2DP.")
+        warning_label.setFont(bold_font)
+        warning_label.setStyleSheet("color: red;")
+        self.profile_methods_layout.addWidget(warning_label)
+
+        connect_button = QPushButton("Connect")
+        connect_button.setFont(bold_font)
+        connect_button.setStyleSheet("color: green; padding: 6px;")
+        connect_button.clicked.connect(lambda: self.connect_and_reload(device_address))
+        self.profile_methods_layout.addWidget(connect_button)
+
+    # Final widget setup
+    self.profile_methods_widget = QWidget()
+    self.profile_methods_widget.setLayout(self.profile_methods_layout)
+
+    # Add to central grid layout
+    self.findChild(QGridLayout).addWidget(self.profile_methods_widget, 2, 0, 6, 4)
+
+    # Load tab content if already connected
+    if self.bluetooth_device_manager.is_connected(device_address):
+        self.on_profile_tab_changed(self.device_tab_widget.currentIndex())
+
+
 So ok leave all. This I will give you my new host ui code .. I’m already adding  connected and paired devices under gap in the list of profiles if user is doing that in current session so what I want to do is .. at starup of ui only check if any devices are already connected without user clicking on pair or connect which is displayed when user clicks on gap .. and display it below gap if any devices are already connected or paired …
 # After: self.profiles_list_widget.addItem("GAP")
 # Add already paired and connected devices below "GAP"
