@@ -1,0 +1,36 @@
+Got it 👍 I see your current table UI with Device Name, BD_ADDR, and Procedures (Pair / Connect buttons). Right now it looks functional but a bit raw. Here are some improvements you could apply:
+
+⸻
+
+Visual/UI Improvements
+	1.	Column alignment & spacing
+	•	Increase spacing between columns so that Device Name, BD_ADDR, and Procedures don’t feel cramped.
+	•	Left-align Device Name, center-align BD_ADDR, and right-align buttons.
+	2.	Highlighting & readability
+	•	Alternate row colors (zebra striping) for better readability.
+	•	Highlight a row when hovered/selected.
+	3.	Column headers
+	•	Add bold headers with a contrasting background (e.g., light grey/blue).
+	•	Use consistent capitalization: Device Name, BD Address, Procedures.
+	4.	Device name truncation
+	•	Long device names (like “OnePlus Nord CE…”) get cut off. Instead:
+	•	Use ellipsis (...) with tooltip on hover to show full name.
+	•	Or allow column resizing.
+	5.	Icons instead of text (optional)
+	•	Use a 🔗 (connect) icon for connect, and a 🔒 (lock) for pair.
+	•	Hover tooltip: “Connect” / “Pair”.
+
+⸻
+
+Feature Improvements
+	1.	Status indicator
+	•	Show connection status with a small colored dot (🟢 connected, 🔴 disconnected, 🟡 pairing).
+	2.	Sorting/Filtering
+	•	Allow sorting by Device Name or BD_ADDR.
+	•	Option to filter by “Paired Devices only” or “Available Devices”.
+	3.	Batch operations
+	•	Add checkboxes so multiple devices can be paired/connected at once.
+	4.	Context menu (right-click)
+	•	Options like Pair, Connect, Disconnect, Unpair could be added to a right-click menu.
+	5.	Signal strength (RSSI)
+	•	If possible, show RSSI value (signal bars 📶) beside devices.
