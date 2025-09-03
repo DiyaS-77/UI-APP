@@ -1,0 +1,35 @@
+Got it 👍 I can see your A2DP UI. Right now it’s functional but looks a bit flat and text-heavy. Here are some suggestions to improve the look and usability:
+
+🎨 Visual / Design Improvements
+	1.	Media Display Box
+	•	Add an album art/thumbnail image of the track currently playing (or a placeholder if not available).
+	•	Center-align song info (Title, Artist, Album).
+	2.	Volume Slider
+	•	Replace with a more modern styled slider (thicker track, rounded handle).
+	•	Show numeric volume percentage beside it.
+	3.	Control Buttons
+	•	Use icons (▶️ ⏸️ ⏭️ ⏮️ ⏪) instead of plain text.
+	•	Make buttons round or pill-shaped for a more music-player feel.
+	•	Space them evenly in a single horizontal row.
+	4.	Overall Layout
+	•	Group “Media Info + Controls” in one card/box.
+	•	Place “Connect / Disconnect / Unpair” below, clearly separated as device management.
+	•	Add subtle borders or shadows around sections for clarity.
+	5.	Color & Styling
+	•	Use contrasting button colors (e.g., green for Play, red for Disconnect).
+	•	Keep background light but add a gradient or slight tint to break monotony.
+
+⸻
+
+🛠️ Feature/UX Improvements
+	•	Add a progress bar showing track duration + elapsed time.
+	•	Show Bluetooth device name and connection status at the top.
+	•	Add a mute button next to volume.
+	•	Optionally, show currently connected profile icons (like A2DP, OPP) as small badges.
+	•	Make the “Rewind” button a seek-backward button (⏪) for better recognition.
+
+⸻
+
+👉 If you want, I can make you a visual mockup (cleaner version of this UI with icons, spacing, and better grouping).
+
+Would you like me to create a visual mockup for this A2DP UI?
