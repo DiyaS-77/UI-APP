@@ -1,26 +1,14 @@
-Thanks for sharing your updated UI 👀. It looks cleaner than the earlier one, but there are still areas where you can make it look more polished and user-friendly. Here are some improvements you could try:
-
-⸻
-
-🎨 Visual Enhancements
-	1.	Song Info Section
-	•	Add album art/thumbnail next to Title–Artist–Album details.
-	•	Bold the title and keep artist/album in a smaller, lighter font for hierarchy.
-	2.	Playback Buttons
-	•	Replace text buttons (Play, Pause, Next, Previous, Rewind) with icon buttons (▶️ ⏸️ ⏭️ ⏮️ ⏪).
-	•	Make them circular and evenly spaced in a single row.
-	3.	Progress Bar
-	•	Use a modern progress slider with a colored track (e.g., blue/green) and a rounded handle.
-	•	Place time elapsed (00:01) and total duration (01:19) on either side (like you did, but more aligned and balanced).
-	4.	Volume Control
-	•	Add a speaker icon (🔊) before the slider.
-	•	Show percentage (100%) dynamically next to the slider in smaller text.
-	5.	Device Control Buttons (Connect / Disconnect / Unpair)
-	•	Style them differently from playback controls.
-	•	For example:
-	•	Connect → Green button
-	•	Disconnect → Red button
-	•	Unpair → Neutral/Gray button
-	6.	Overall Layout
-	•	Add rounded card-style containers around sections (Media info, Controls, Device management).
-	•	Use subtle shadows or gradients so that it doesn’t feel flat.
+🛠️ Functionalities You Could Add
+	1.	Pause/Resume Streaming → not just Start/Stop.
+	2.	File Queue / Playlist → allow selecting multiple files and queue them.
+	3.	Loop / Repeat Option → useful for test tones or background checks.
+	4.	Streaming Quality Options → Low/Medium/High bitrate toggle.
+	5.	Device Target Selection → show which connected device you are streaming to (if multiple paired).
+	6.	Real-time Stats →
+	•	Bitrate (kbps)
+	•	Sample Rate
+	•	Data Packets Sent / Dropped
+	•	Latency (ms)
+	7.	Log Window (Optional) → show ongoing streaming logs for debugging.
+	8.	Volume Control → independent source volume slider.
+	9.	Waveform/Visualizer (Optional for better UX) → shows that audio is actively streaming.
