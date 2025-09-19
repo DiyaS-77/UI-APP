@@ -1,3 +1,95 @@
+def on_profile_tab_changed(self, index):
+    if not hasattr(self, 'device_tab_widget') or index < 0:
+        return
+
+    selected_tab = self.device_tab_widget.tabText(index)
+    current_device = getattr(self, "device_address", None)
+    if not current_device:
+        self.log.warning("No active device set for tab switch")
+        return
+
+    if selected_tab in ("A2DP", "A2DP Sink", "A2DP Source"):
+        self.clear_layout(self.a2dp_tab_placeholder)
+        layout = QVBoxLayout()
+        a2dp_panel = self.build_a2dp_ui(current_device)
+        self.log.info("Switched to %s tab for %s", selected_tab, current_device)
+        layout.addWidget(a2dp_panel)
+        self.a2dp_tab_placeholder.setLayout(layout)
+        self.a2dp_tab_placeholder.update()
+
+    elif selected_tab == "OPP":
+        self.clear_layout(self.opp_tab_placeholder)
+        layout = QVBoxLayout()
+        opp_tab = self.build_opp_tab(current_device)
+        self.log.info("Switched to OPP tab for %s", current_device)
+        layout.addWidget(opp_tab)
+        self.opp_tab_placeholder.setLayout(layout)
+        self.opp_tab_placeholder.update()
+def load_profile_tabs_for_device(self, device_address, profile_list):
+    """Loads and displays profile-related UI tabs for a specific Bluetooth device."""
+    bold_font = QFont()
+    bold_font.setBold(True)
+
+    self.device_address = device_address
+    is_connected = self.bluetooth_device_manager.is_device_connected(device_address)
+    if not is_connected:
+        warning_label = QLabel("Device is not connected. Connect to enable profile controls.")
+        warning_label.setObjectName("WarningLabel")
+        warning_label.setFont(bold_font)
+        warning_label.setStyleSheet(styles.color_style_sheet)
+        self.clear_layout(self.profile_methods_layout)
+        self.profile_methods_layout.addWidget(warning_label)
+        self.add_connection_controls(self.profile_methods_layout, device_address)
+        return
+
+    # Create fresh tab widget for this device
+    self.device_tab_widget = QTabWidget()
+    self.device_tab_widget.setMaximumWidth(600)
+    self.device_tab_widget.setFont(bold_font)
+    self.device_tab_widget.setStyleSheet(styles.widget_style_sheet)
+
+    # Placeholders for profiles
+    self.a2dp_tab_placeholder = QWidget()
+    self.opp_tab_placeholder = QWidget()
+
+    added_profile_tabs = []
+
+    # Normalize profile list
+    profile_list = [p.lower() for p in profile_list]
+
+    # Handle A2DP roles separately
+    if 'a2dp_sink' in profile_list:
+        index = self.device_tab_widget.count()
+        self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP Sink")
+        added_profile_tabs.append(index)
+
+    if 'a2dp_source' in profile_list:
+        index = self.device_tab_widget.count()
+        self.device_tab_widget.addTab(self.a2dp_tab_placeholder, "A2DP Source")
+        added_profile_tabs.append(index)
+
+    # Handle OPP
+    if 'opp' in profile_list:
+        index = self.device_tab_widget.count()
+        self.device_tab_widget.addTab(self.opp_tab_placeholder, "OPP")
+        added_profile_tabs.append(index)
+
+    # Hook tab change handler
+    self.device_tab_widget.currentChanged.connect(self.on_profile_tab_changed)
+
+    # Clear and add widget to layout
+    self.clear_layout(self.profile_methods_layout)
+    self.profile_methods_layout.addWidget(self.device_tab_widget)
+
+    # Open first tab automatically
+    if added_profile_tabs:
+        self.device_tab_widget.setCurrentIndex(added_profile_tabs[0])
+        self.on_profile_tab_changed(added_profile_tabs[0])
+
+    # Add connection controls below tabs
+    self.add_connection_controls(self.profile_methods_layout, device_address)
+
+
 def manage_device(self, action, device_address, load_profiles):
     """Performs a Bluetooth device action and updates the UI.
 
