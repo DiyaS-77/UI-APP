@@ -1,0 +1,178 @@
+def manage_device(self, action, device_address, load_profiles):
+    """Performs a Bluetooth device action and updates the UI.
+
+    Args:
+        action: One of 'pair', 'connect', 'disconnect', or 'unpair'.
+        device_address: The Bluetooth address of the device.
+    """
+    if action == 'pair':
+        self.log.info("Attempting to pair with %s", device_address)
+        if self.bluetooth_device_manager.is_device_paired(device_address):
+            QMessageBox.information(self, "Already Paired", f"{device_address} is already paired.")
+            self.add_device(device_address)
+            return
+        success = self.bluetooth_device_manager.pair(device_address)
+        if success:
+            QMessageBox.information(self, "Pairing Successful", f"{device_address} was paired.")
+            self.add_device(device_address)
+        else:
+            QMessageBox.critical(self, "Pairing Failed", f"Pairing with {device_address} failed.")
+
+    elif action == 'connect':
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select Bluetooth Profiles to Connect")
+        dialog.setMinimumSize(400, 400)
+        dialog.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(5)
+
+        all_profiles = QCheckBox("All Profiles")
+        a2dp_checkbox = QCheckBox("A2DP (Audio Streaming)")
+        opp_checkbox = QCheckBox("OPP (File Transfer)")
+        layout.addWidget(all_profiles)
+        layout.addWidget(a2dp_checkbox)
+        layout.addWidget(opp_checkbox)
+
+        # Role selection for A2DP
+        a2dp_role_group = QGroupBox("Select A2DP Role")
+        role_layout = QHBoxLayout()
+        sink_radio = QRadioButton("Sink")
+        source_radio = QRadioButton("Source")
+        sink_radio.setChecked(True)
+        role_layout.addWidget(sink_radio)
+        role_layout.addWidget(source_radio)
+        a2dp_role_group.setLayout(role_layout)
+        a2dp_role_group.setVisible(False)
+        layout.addWidget(a2dp_role_group)
+        a2dp_checkbox.stateChanged.connect(lambda: a2dp_role_group.setVisible(a2dp_checkbox.isChecked()))
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        layout.addWidget(buttons)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        if dialog.exec():
+            self.selected_profiles.clear()
+            if all_profiles.isChecked():
+                self.selected_profiles['all'] = True
+            if a2dp_checkbox.isChecked():
+                self.selected_profiles['a2dp'] = 'sink' if sink_radio.isChecked() else 'source'
+            if opp_checkbox.isChecked():
+                self.selected_profiles['opp'] = True
+
+            if not self.selected_profiles:
+                QMessageBox.warning(self, "No Profile Selected", "Please select at least one profile to connect.")
+                return
+
+            # Temporary list to track success
+            connected_profiles = []
+            failed_profiles = []
+            errors = {}
+            all_success = True
+
+            for profile, role in self.selected_profiles.items():
+                success = False
+                if profile == 'all':
+                    success = self.bluetooth_device_manager.connect(device_address)
+                    if success:
+                        connected_uuids = self.bluetooth_device_manager.get_connected_profile_uuids(device_address)
+                        if constants.a2dp_sink_uuid in connected_uuids:
+                            connected_profiles.append("A2DP_SINK")
+                        elif constants.a2dp_source_uuid in connected_uuids:
+                            connected_profiles.append("A2DP_SOURCE")
+                        else:
+                            failed_profiles.append("A2DP")
+                            all_success = False
+                        if constants.opp_uuid in connected_uuids:
+                            connected_profiles.append("OPP")
+                        else:
+                            failed_profiles.append("OPP")
+                            all_success = False
+                    else:
+                        failed_profiles.extend(["A2DP", "OPP"])
+                        all_success = False
+
+                elif profile == 'a2dp':
+                    uuid = constants.a2dp_sink_uuid if role == 'sink' else constants.a2dp_source_uuid
+                    success = self.bluetooth_device_manager.connect_profile(device_address, profile_uuid=uuid)
+                    if success:
+                        if role == 'sink':
+                            connected_profiles.append("A2DP_SINK")
+                        else:
+                            connected_profiles.append("A2DP_SOURCE")
+                    else:
+                        failed_profiles.append("A2DP")
+                        all_success = False
+
+                elif profile == 'opp':
+                    self.session_path = self.bluetooth_device_manager.create_obex_session(device_address)
+                    if self.session_path:
+                        connected_profiles.append("OPP")
+                        success = True
+                    else:
+                        failed_profiles.append("OPP")
+                        all_success = False
+
+            # ✅ Update only if at least one profile succeeded
+            if connected_profiles:
+                self.device_profiles[device_address] = connected_profiles
+
+            if connected_profiles and all_success:
+                QMessageBox.information(self, "Connection Successful",
+                                        f"Connected profiles: {', '.join(connected_profiles)}")
+            else:
+                message = ""
+                if connected_profiles:
+                    message += f"Successfully connected: {', '.join(connected_profiles)}\n"
+                if failed_profiles:
+                    message += "Failed to connect:\n"
+                    for profile in failed_profiles:
+                        error_message = errors.get(profile.lower(), "Unknown error")
+                        message += f" - {profile}: {error_message}\n"
+                QMessageBox.warning(self, "Connection Result", message.strip())
+
+            if load_profiles and connected_profiles:
+                self.load_profile_tabs_for_device(device_address, self.device_profiles[device_address])
+
+    elif action == 'disconnect':
+        success = self.bluetooth_device_manager.disconnect(device_address)
+        if success:
+            QMessageBox.information(self, "Disconnection Successful", f"{device_address} was disconnected.")
+            self.log.info("Disconnected from %s", device_address)
+        else:
+            QMessageBox.warning(self, "Disconnection Failed", f"Could not disconnect from {device_address}")
+
+        # ✅ Remove only this device’s profiles, don’t clear others
+        self.device_profiles.pop(device_address, None)
+
+        # ✅ If the disconnected device is the currently active one, clear its UI
+        if getattr(self, "device_address", None) == device_address:
+            self.clear_layout(self.profile_methods_layout)
+            warning_label = QLabel("Device disconnected.")
+            warning_label.setStyleSheet(styles.color_style_sheet)
+            self.profile_methods_layout.addWidget(warning_label)
+
+        self.selected_profiles = {}
+
+    elif action == 'unpair':
+        success = self.bluetooth_device_manager.unpair_device(device_address)
+        if success:
+            QMessageBox.information(self, "Unpair Successful", f"{device_address} was unpaired.")
+            self.log.info("Unpaired %s", device_address)
+        else:
+            QMessageBox.warning(self, "Unpair Failed", f"Could not unpair {device_address}")
+
+        self.device_profiles.pop(device_address, None)
+        self.remove_unpaired_device(device_address)
+
+        if self.profiles_list_widget.count() == 1:
+            self.profiles_list_widget.itemSelectionChanged.connect(self.profile_selected)
+        else:
+            if getattr(self, "device_address", None) == device_address:
+                self.clear_layout(self.profile_methods_layout)
+
+    else:
+        self.log.error("Unknown action: %s", action)
